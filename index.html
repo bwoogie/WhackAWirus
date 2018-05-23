@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHACK A WIRUS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border: 1px solid #d3d3d3;
+    background-color: #f1f1f1;
+    cursor: none;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+/*
+****WHACK A WIRUS
+*/
+function startGame() {
+    hammer = new hammer(128, 128, "hammer1.png", "hammer.png", 10, 10);
+    computer1 = new computer(128, 128, "computer.png", "computer_broken.png", 10, 120);
+    computer2 = new computer(128, 128, "computer.png", "computer_broken.png", 10+128, 120);
+    computer3 = new computer(128, 128, "computer.png", "computer_broken.png", 10+128+128, 120);
+    computer4 = new computer(128, 128, "computer.png", "computer_broken.png", 10+128+128+128, 120);
+    wirus = new wirus(64, 64, "wirus.png", -100, -100);
+
+    newGame();
+
+    myGameArea.context.font = "14px Arial";
+    myGameArea.context.fillStyle = "black";
+}
+
+function newGame() {
+    score = 0;
+    brokeCount = 0;
+    gameOver = false;
+    restartTimer = false;
+
+    computer1.broke = false;
+    computer2.broke = false;
+    computer3.broke = false;
+    computer4.broke = false;
+
+    this.wirusTime = 500;
+    var curWirusSlot = 0;
+    var wirusInt;
+    startWirusTimer();
+    myGameArea.start();
+}
+
+function updateGameArea() {
+    myGameArea.clear();
+    
+        myGameArea.context.drawImage(myGameArea.backgroundImg, 0, 0);
+        computer1.update();
+        computer2.update();
+        computer3.update();
+        computer4.update();
+
+    if(!gameOver) {
+        wirus.update();
+
+        hammer.update();
+
+        //myGameArea.context.fillText("Score: " + score, 10, 30);
+    } else {
+        myGameArea.context.drawImage(myGameArea.gameOverImg, (myGameArea.canvas.width * .5) - (myGameArea.gameOverImg.width * .5), (myGameArea.canvas.height * .5) - (myGameArea.gameOverImg.height * .5));
+        if(!restartTimer) {
+
+            clearInterval(wirusInt);
+            clearInterval(this.interval);
+            restartTimer = true;
+            setTimeout(newGame, 5000);
+        }
+    }
+
+    if(brokeCount >= 4) {
+        gameOver = true;
+    }
+}
+
+window.addEventListener('mousemove', setHammerPos, false);
+window.addEventListener('click', click, false);
+window.addEventListener('mousedown', mousedown, false);
+window.addEventListener('mouseup', mouseup, false);
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.backgroundImg = new Image();
+        this.backgroundImg.src = "background.png";
+
+        this.gameOverImg = new Image();
+        this.gameOverImg.src = "gameover.png";
+
+        this.canvas.width = 532;
+        this.canvas.height = 270;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 33);
+    },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    stop : function() {
+        clearInterval(this.interval);
+    }
+}
+
+function startWirusTimer() {
+    wirusInt = setInterval(updateWirus, wirusTime);
+}
+
+
+
+function computer(width, height, src, srcBroken, x, y) {
+    this.image = new Image();
+    this.image.src = src;
+
+    this.imageBroken = new Image();
+    this.imageBroken.src = srcBroken;
+
+    this.broke = false;
+
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+    this.update = function () {
+        ctx = myGameArea.context;
+        ctx.drawImage(this.broke ? this.imageBroken : this.image, this.x, this.y, this.width, this.height);
+    }
+
+    this.setPos = function(pos) {
+        this.x = pos.x - (width * .5);
+        this.y = pos.y - (height * .5);       
+    }
+}
+
+function hammer(width, height, src, src2, x, y) {
+    this.image = new Image();
+    this.image.src = src;
+
+    this.image2 = new Image();
+    this.image2.src = src2;
+
+    this.mouseDown = false;
+
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+    this.update = function () {
+        ctx = myGameArea.context;
+        ctx.drawImage(this.mouseDown ? this.image2 : this.image, this.x, this.y, this.width, this.height);
+    }
+
+    this.setPos = function(pos) {
+        this.x = pos.x - (width * .5);
+        this.y = pos.y - (height * .5);
+    }
+}
+
+function wirus(width, height, src, x, y) {
+    this.image = new Image();
+    this.image.src = src;
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+    this.update = function () {
+        ctx = myGameArea.context;
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+    }
+
+    this.setPos = function(pos) {
+        this.x = pos.x - (width * .5);
+        this.y = pos.y - (height * .5);
+    }
+}
+
+
+
+function mousedown(e) {
+    hammer.mouseDown = true;
+}
+
+function mouseup(e) {
+    hammer.mouseDown = false;
+}
+
+function click(e) {
+    var pos = getMousePos(myGameArea.canvas, e);
+
+    var cp = [
+         {x : computer1.x, y : computer1.y, x2 : computer1.x + computer1.width, y2 : computer1.y + computer1.height},
+         {x : computer2.x, y : computer2.y, x2 : computer2.x + computer2.width, y2 : computer2.y + computer2.height},
+         {x : computer3.x, y : computer3.y, x2 : computer3.x + computer3.width, y2 : computer3.y + computer3.height}, 
+         {x : computer4.x, y : computer4.y, x2 : computer4.x + computer4.width, y2 : computer4.y + computer4.height},
+    ];
+
+
+    cp.forEach((comp, i)  => {
+        i++;
+        if(pos.x > comp.x && pos.y > comp.y && pos.x < comp.x2 && pos.y < comp.y2) {
+            if(this.curWirusSlot == i) {
+                console.log("corwect wirus");
+                clearInterval(wirusInt);
+                startWirusTimer();
+                if(wirusTime > 10) {
+                    wirusTime -= 10;
+                    console.log("wirusTime: " + wirusTime);
+                }
+                updateWirus();
+            } else {
+                console.log("no good");
+                switch(i) {
+                    case 1:
+                    if(!computer1.broke) {
+                        computer1.broke = true;
+                        brokeCount++;
+                    }
+                    break;
+                    case 2:
+                    if(!computer2.broke) {
+                        computer2.broke = true;
+                        brokeCount++;
+                    }
+                    break;
+                    case 3:
+                    if(!computer3.broke) {
+                        computer3.broke=true;
+                        brokeCount++;
+                    }
+                    break;
+                    case 4:
+                    if(!computer4.broke) {
+                        computer4.broke=true;
+                        brokeCount++;
+                    }
+                    break;
+                }
+            }
+        }    
+    });
+
+}
+
+function setHammerPos(e) {
+    hammer.setPos(getMousePos(myGameArea.canvas, e));
+}
+
+function getMousePos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+}
+
+function updateWirus() {
+    var x, y;
+    var r = Math.floor(Math.random() * 4) + 1;
+    while(r == this.curWirusSlot) {
+        r = Math.floor(Math.random() * 4) + 1;
+    } 
+    this.curWirusSlot = r;
+        switch(r) {
+            case 1:
+                x = computer1.x + (computer1.width * .5);
+                y = computer1.y + (computer1.height * .5) - 12;
+            break;
+
+            case 2:
+                x = computer2.x + (computer2.width * .5);
+                y = computer2.y + (computer2.height * .5) - 12;
+            break;
+
+            case 3:
+                x = computer3.x + (computer3.width * .5);
+                y = computer3.y + (computer3.height * .5) - 12;
+            break;
+
+            case 4:
+                x = computer4.x + (computer4.width * .5);
+                y = computer4.y + (computer4.height * .5) - 12;
+            break;
+        }
+
+        wirus.setPos({x, y});
+}
+
+</script>
+
+</body>
+</html>
